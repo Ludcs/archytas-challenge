@@ -1,0 +1,812 @@
+{
+  "name": "SIGProv Price Sync",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        96
+      ],
+      "id": "a57e5bc1-e91f-43cd-a1db-c91103996dcc",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://prueba-tecnica-portal.vercel.app/api/login",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "usuario",
+              "value": "__SIGPROV_USERNAME__"
+            },
+            {
+              "name": "clave",
+              "value": "__SIGPROV_PASSWORD__"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e69f67f6-ee81-4355-b3e8-6caf377961dd",
+      "name": "Login SIGProv"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://prueba-tecnica-portal.vercel.app/api/token",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cookie",
+              "value": "={{ $node[\"Login SIGProv\"].json[\"headers\"][\"set-cookie\"][0].split(\";\")[0] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"kind\": \"precios\",\n  \"id\": \"lista-precios-actual\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "df20a7ec-7f0f-48dc-b467-0268104e8407",
+      "name": "Generate Download Token"
+    },
+    {
+      "parameters": {
+        "url": "=https://prueba-tecnica-portal.vercel.app{{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cookie",
+              "value": "={{ $node[\"Login SIGProv\"].json[\"headers\"][\"set-cookie\"][0].split(\";\")[0] }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        688,
+        0
+      ],
+      "id": "a2229b8e-e88e-4686-aa89-d155bb95c5e4",
+      "name": "Download Price Excel"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        0
+      ],
+      "id": "a1fbe4bc-00ca-4853-8a0c-6b84c842ff3e",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "57a6e87a-ce50-4699-b692-f560bd805dbd",
+              "name": "external_code",
+              "value": "={{ $json.Codigo }}",
+              "type": "string"
+            },
+            {
+              "id": "6dd541b6-d3b7-4a21-bf29-915794f5a10e",
+              "name": "description",
+              "value": "={{ $json.Descripcion }}",
+              "type": "string"
+            },
+            {
+              "id": "a224f99c-27c9-4835-9309-1ef83794e90e",
+              "name": "category_raw",
+              "value": "={{ $json.Categoria }}",
+              "type": "string"
+            },
+            {
+              "id": "03be3cf6-29e7-4bb1-9d4f-e539cbfbf04f",
+              "name": "subcategory_raw",
+              "value": "={{ $json.Subcategoria }}",
+              "type": "string"
+            },
+            {
+              "id": "fcc06dd8-c335-42d1-9539-58b854a46661",
+              "name": "current_price",
+              "value": "={{ $json.Precio }}",
+              "type": "number"
+            },
+            {
+              "id": "e429f1cf-0c4f-4bd2-902b-032b56a9cc33",
+              "name": "stock",
+              "value": "={{ $json.Stock }}",
+              "type": "number"
+            },
+            {
+              "id": "82039c76-cf04-4f69-b714-62608684be93",
+              "name": "last_synced_at",
+              "value": "={{$now}}",
+              "type": "string"
+            },
+            {
+              "id": "5d2cc3ef-e966-4cf8-9a68-a2658a12fcfa",
+              "name": "updated_at",
+              "value": "={{$now}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1104,
+        0
+      ],
+      "id": "7024130b-2ade-4660-b061-14abeb9cacb5",
+      "name": "Map Product Fields"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "products",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "external_code",
+              "keyValue": "={{ $json.external_code }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        0
+      ],
+      "id": "a029f7b7-fdbe-4102-bd1b-387aafee8e32",
+      "name": "Get Product",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fba8829f-1cb9-46af-8c5c-e062875802af",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1728,
+        0
+      ],
+      "id": "0fbf8d22-79be-4604-a13a-02a6db408efb",
+      "name": "Product Exists?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "products",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Get Product').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "description",
+              "fieldValue": "={{$('Map Product Fields').item.json.description}}"
+            },
+            {
+              "fieldId": "category_raw",
+              "fieldValue": "={{ $('Map Product Fields').item.json.category_raw }}"
+            },
+            {
+              "fieldId": "subcategory_raw",
+              "fieldValue": "={{ $('Map Product Fields').item.json.subcategory_raw }}"
+            },
+            {
+              "fieldId": "current_price",
+              "fieldValue": "={{ $('Map Product Fields').item.json.current_price }}"
+            },
+            {
+              "fieldId": "stock",
+              "fieldValue": "={{ $('Map Product Fields').item.json.stock }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $('Map Product Fields').item.json.updated_at }}"
+            },
+            {
+              "fieldId": "last_synced_at",
+              "fieldValue": "={{ $('Map Product Fields').item.json.last_synced_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        -32
+      ],
+      "id": "5c600d2e-10f6-45ba-8e25-70cf35dc7bb6",
+      "name": "Update Product",
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "products",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "external_code",
+              "fieldValue": "={{ $('Map Product Fields').item.json.external_code }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $('Map Product Fields').item.json.description }}"
+            },
+            {
+              "fieldId": "category_raw",
+              "fieldValue": "={{ $('Map Product Fields').item.json.category_raw }}"
+            },
+            {
+              "fieldId": "subcategory_raw",
+              "fieldValue": "={{ $('Map Product Fields').item.json.subcategory_raw }}"
+            },
+            {
+              "fieldId": "current_price",
+              "fieldValue": "={{ $('Map Product Fields').item.json.current_price }}"
+            },
+            {
+              "fieldId": "stock",
+              "fieldValue": "={{ $('Map Product Fields').item.json.stock }}"
+            },
+            {
+              "fieldId": "last_synced_at",
+              "fieldValue": "={{ $('Map Product Fields').item.json.last_synced_at }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $('Map Product Fields').item.json.updated_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2624,
+        192
+      ],
+      "id": "58e511e6-1c68-4293-8a82-1e98577117c7",
+      "name": "Create Product",
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1328,
+        -128
+      ],
+      "id": "4a6818d4-6bb1-432c-bfeb-72306af2a3b0",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8d98180f-48f5-4db2-a935-f7658e389e04",
+              "leftValue": "={{ $json.current_price }}",
+              "rightValue": "={{ $('Map Product Fields').item.json.current_price }}",
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1920,
+        -80
+      ],
+      "id": "88d7b57f-7de8-445e-8031-2ebd88d5d58f",
+      "name": "Prince Changed"
+    },
+    {
+      "parameters": {
+        "tableId": "price_history",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "product_id",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "price",
+              "fieldValue": "={{ $('Map Product Fields').item.json.current_price }}"
+            },
+            {
+              "fieldId": "recorded_at",
+              "fieldValue": "={{ $now }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "sigprov"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        -192
+      ],
+      "id": "0a9c0339-5199-4f8b-8c11-840e1ae37964",
+      "name": "Create Price History",
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            },
+            {
+              "triggerAtHour": 20
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -176,
+        -272
+      ],
+      "id": "4b7bab24-f5d6-45bf-804d-687a5f1d2317",
+      "name": "Scheduled Price Sync",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "tableId": "sync_runs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "sync_type",
+              "fieldValue": "prices"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "running"
+            },
+            {
+              "fieldId": "started_at",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        16,
+        -80
+      ],
+      "id": "c248af24-9513-41c6-a8c8-0caf310bfda7",
+      "name": "Create Sync Run",
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "sync_runs",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Create Sync Run').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "success"
+            },
+            {
+              "fieldId": "finished_at",
+              "fieldValue": "{{ $now }}"
+            },
+            {
+              "fieldId": "rows_received",
+              "fieldValue": "={{ $('Extract from File').all().length }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        -288
+      ],
+      "id": "a5a8ffe8-3722-4dd9-8b07-fa7f9206d38f",
+      "name": "Complete Sync Run",
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "price_history",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "product_id",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "price",
+              "fieldValue": "={{ $('Map Product Fields').item.json.current_price }}"
+            },
+            {
+              "fieldId": "recorded_at",
+              "fieldValue": "={{ $now }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "sigprov"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2832,
+        192
+      ],
+      "id": "d2ac4344-7264-4c10-93f7-4b97425196c3",
+      "name": "Create Initial Price History",
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Create Sync Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login SIGProv": {
+      "main": [
+        [
+          {
+            "node": "Generate Download Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Download Token": {
+      "main": [
+        [
+          {
+            "node": "Download Price Excel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Price Excel": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Map Product Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Product Fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Product": {
+      "main": [
+        [
+          {
+            "node": "Product Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product Exists?": {
+      "main": [
+        [
+          {
+            "node": "Prince Changed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Complete Sync Run",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Product": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Product": {
+      "main": [
+        [
+          {
+            "node": "Create Initial Price History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prince Changed": {
+      "main": [
+        [
+          {
+            "node": "Create Price History",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Price History": {
+      "main": [
+        [
+          {
+            "node": "Update Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scheduled Price Sync": {
+      "main": [
+        [
+          {
+            "node": "Create Sync Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Sync Run": {
+      "main": [
+        [
+          {
+            "node": "Login SIGProv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Initial Price History": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "79c129d9-b6d1-4f3b-af03-9f75992c7d95",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4604d5ca29a4e31ca62c5f558e3ad82c2e07e3f2b78a3393cb25f6d00b36689e"
+  },
+  "nodeGroups": [],
+  "id": "fNX28oKSQNUFKmyH",
+  "tags": []
+}
