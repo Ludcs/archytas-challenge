@@ -1,0 +1,925 @@
+{
+  "name": "02-sigprov-supplier-account-sync",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        0
+      ],
+      "id": "ec15db83-400c-43c6-9b21-9c66444fb775",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "tableId": "sync_runs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "sync_type",
+              "fieldValue": "suppliers"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "running"
+            },
+            {
+              "fieldId": "started_at",
+              "fieldValue": "={{$now}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "7a829788-653d-4f18-ab3a-0e8fdaa1a6bf",
+      "name": "Create Supplier Sync Run",
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://prueba-tecnica-portal.vercel.app/api/login",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "usuario",
+              "value": "__SIGPROV_USERNAME__"
+            },
+            {
+              "name": "clave",
+              "value": "__SIGPROV_PASSWORD__"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "69493cc1-4e0f-46c5-a896-cd995eb65bb4",
+      "name": "Login SIGProv"
+    },
+    {
+      "parameters": {
+        "url": "https://prueba-tecnica-portal.vercel.app/api/estado-cuenta",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cookie",
+              "value": "={{ $node[\"Login SIGProv\"].json[\"headers\"][\"set-cookie\"][0].split(\";\")[0] }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a9a73278-ffcf-4922-8728-d52f27e632ce",
+      "name": "Get Suppliers Accounts"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "cuentas",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a89da81e-f7c0-41d2-a0ff-186895b3de51",
+      "name": "Split Suppliers"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "09c494b2-ef62-4417-815a-482fe66dbcf2",
+              "name": "external_slug",
+              "value": "={{ $json.slug }}",
+              "type": "string"
+            },
+            {
+              "id": "21eb5aaa-c624-460e-a0c7-fb4e2e75dfc4",
+              "name": "canonical_name",
+              "value": "={{ $json.proveedor }}",
+              "type": "string"
+            },
+            {
+              "id": "78f21987-2c4e-4377-acd4-8db001e1811d",
+              "name": "cuit",
+              "value": "={{ $json.cuit }}",
+              "type": "string"
+            },
+            {
+              "id": "582c1e26-8274-4490-9069-6682227f0a47",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "2e4cdc7a-1d4e-48c6-9c08-41d7e8aef5ad",
+              "name": "phone",
+              "value": "={{ $json.telefono }}",
+              "type": "string"
+            },
+            {
+              "id": "7983ae0d-f9de-4ea9-9291-ea4e5537b79c",
+              "name": "address",
+              "value": "={{ $json.domicilio }}",
+              "type": "string"
+            },
+            {
+              "id": "2fd7509e-9e20-4c72-b92c-77a261d06e88",
+              "name": "payment_terms_days",
+              "value": "={{ parseInt($json.condicionPago) }}",
+              "type": "number"
+            },
+            {
+              "id": "896d88b2-c7c6-46c3-9452-002e6da59796",
+              "name": "current_balance",
+              "value": "={{ Number($json.saldoActual.replace('$', '').replace(/\\./g, '')) }}",
+              "type": "number"
+            },
+            {
+              "id": "9e84036e-6d62-4161-8282-5dbadf06ed9f",
+              "name": "last_synced_at",
+              "value": "={{$now}}",
+              "type": "string"
+            },
+            {
+              "id": "61fb28f4-051a-4569-b9b5-d373ea808529",
+              "name": "movements",
+              "value": "={{ $json.movimientos }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "8a72d70d-a504-4734-ba00-08b001c23a71",
+      "name": "Normalize Supplier"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "suppliers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "external_slug",
+              "keyValue": "={{ $json.external_slug }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "dd3d3622-aa25-4ba4-9478-ef83a7dbf92a",
+      "name": "Get Supplier",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "483d8e70-cd11-45f1-9ea3-6b1a331a90aa",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "8ccc9fdc-f8ee-4d90-b957-31d03539c3d4",
+      "name": "Supplier Exists?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "suppliers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "canonical_name",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.canonical_name }}"
+            },
+            {
+              "fieldId": "cuit",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.cuit }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.email }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.phone }}"
+            },
+            {
+              "fieldId": "address",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.address }}"
+            },
+            {
+              "fieldId": "payment_terms_days",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.payment_terms_days }}"
+            },
+            {
+              "fieldId": "current_balance",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.current_balance }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now }}"
+            },
+            {
+              "fieldId": "last_synced_at",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.last_synced_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        -384
+      ],
+      "id": "d13f41bf-d7dc-487c-98e6-1bbf7c01d55f",
+      "name": "Update Supplier",
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "suppliers",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "external_slug",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.external_slug }}"
+            },
+            {
+              "fieldId": "canonical_name",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.canonical_name }}"
+            },
+            {
+              "fieldId": "cuit",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.cuit }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.email }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.phone }}"
+            },
+            {
+              "fieldId": "address",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.address }}"
+            },
+            {
+              "fieldId": "payment_terms_days",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.payment_terms_days }}"
+            },
+            {
+              "fieldId": "current_balance",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.current_balance }}"
+            },
+            {
+              "fieldId": "last_synced_at",
+              "fieldValue": "={{ $('Normalize Supplier').item.json.last_synced_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        224
+      ],
+      "id": "b91ddafc-9b27-462b-bc58-206159b21afa",
+      "name": "Create Supplier",
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f8992621-c722-47f1-924b-fd3571c6c20a",
+              "name": "supplier_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "21d6f5f9-10c9-4891-88d6-d14a76167e0e",
+              "name": "movements",
+              "value": "={{ $('Normalize Supplier').item.json.movements }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1648,
+        -32
+      ],
+      "id": "d4f0f97b-e2b0-47dc-aa2f-7cb2b935eec9",
+      "name": "Prepare Supplier Movements"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "movements",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2272,
+        -32
+      ],
+      "id": "3334b388-2b16-422c-8561-cb04e423c561",
+      "name": "Split Movements"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "85c9618c-ac2e-4097-89e2-9c0a89669132",
+              "name": "supplier_id",
+              "value": "={{ $json.supplier_id }}",
+              "type": "string"
+            },
+            {
+              "id": "ebaac9a0-c324-469d-aedf-0ed524fe5b87",
+              "name": "movement_date",
+              "value": "={{ $json.movements.fecha }}",
+              "type": "string"
+            },
+            {
+              "id": "7bf7a4d7-9313-4058-b16d-65636b6be8f2",
+              "name": "movement_type",
+              "value": "={{ $json.movements.tipo }}",
+              "type": "string"
+            },
+            {
+              "id": "b0efc755-770a-4f47-b5c6-d71e2791e1ee",
+              "name": "reference",
+              "value": "={{ $json.movements.referencia }}",
+              "type": "string"
+            },
+            {
+              "id": "0658c82e-ae2f-4b40-b3e9-2c08b6b68731",
+              "name": "debe",
+              "value": "={{ Number($json.movements.debe.replace('$', '').replace(/\\./g, '')) }}",
+              "type": "string"
+            },
+            {
+              "id": "7623e6af-4732-444c-91ef-a9a9f76ac1ad",
+              "name": "haber",
+              "value": "={{ Number($json.movements.haber.replace('$', '').replace(/\\./g, '')) }}",
+              "type": "string"
+            },
+            {
+              "id": "15b26df1-b2fa-445f-bd1a-05756a80076b",
+              "name": "saldo",
+              "value": "={{ Number($json.movements.saldo.replace('$', '').replace(/\\./g, '')) }}",
+              "type": "string"
+            },
+            {
+              "id": "c608785c-115a-4b43-abba-550a01714c0b",
+              "name": "last_synced_at",
+              "value": "={{ $now }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2480,
+        -32
+      ],
+      "id": "8a4e6d62-1915-4b7f-b2e5-20ea48312a18",
+      "name": "Normalize Movement"
+    },
+    {
+      "parameters": {
+        "tableId": "supplier_account_movements",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "supplier_id",
+              "fieldValue": "={{ $('Normalize Movement').item.json.supplier_id }}"
+            },
+            {
+              "fieldId": "movement_date",
+              "fieldValue": "={{ $('Normalize Movement').item.json.movement_date }}"
+            },
+            {
+              "fieldId": "movement_type",
+              "fieldValue": "={{ $('Normalize Movement').item.json.movement_type }}"
+            },
+            {
+              "fieldId": "reference",
+              "fieldValue": "={{ $('Normalize Movement').item.json.reference }}"
+            },
+            {
+              "fieldId": "debe",
+              "fieldValue": "={{ $('Normalize Movement').item.json.debe }}"
+            },
+            {
+              "fieldId": "haber",
+              "fieldValue": "={{ $('Normalize Movement').item.json.haber }}"
+            },
+            {
+              "fieldId": "saldo",
+              "fieldValue": "={{ $('Normalize Movement').item.json.saldo }}"
+            },
+            {
+              "fieldId": "last_synced_at",
+              "fieldValue": "={{ $('Normalize Movement').item.json.last_synced_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2720,
+        -32
+      ],
+      "id": "5670588c-325e-4e3d-af3b-ab7f55997c30",
+      "name": "Create Movement",
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        816,
+        -352
+      ],
+      "id": "f8cae260-44b6-4a32-8635-b44704601597",
+      "name": "Loop Suppliers"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "sync_runs",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Create Supplier Sync Run').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "success"
+            },
+            {
+              "fieldId": "finished_at",
+              "fieldValue": "={{$now}}"
+            },
+            {
+              "fieldId": "rows_received",
+              "fieldValue": "={{ $('Split Suppliers').all().length }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        992,
+        -560
+      ],
+      "id": "5b16d76a-d53a-4373-b358-fb16aad56259",
+      "name": "Complete Supplier Sync",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        2944,
+        -32
+      ],
+      "id": "586b9b63-56b3-4fb1-8de8-311a927534ce",
+      "name": "Return to Supplier Loop"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "supplier_account_movements",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "supplier_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Prepare Supplier Movements').item.json.supplier_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1856,
+        -32
+      ],
+      "id": "527a7900-edad-49be-b62e-97225f390fbd",
+      "name": "Delete Existing Movements",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "9JcvyhunD0NMgVcu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b5a7a9f8-3232-43fc-b5bd-4d8c9ef25821",
+              "name": "supplier_id",
+              "value": "={{ $('Prepare Supplier Movements').item.json.supplier_id }}",
+              "type": "string"
+            },
+            {
+              "id": "764e19fb-06c0-4d57-b129-7a535b8479e5",
+              "name": "movements",
+              "value": "={{ $('Prepare Supplier Movements').item.json.movements }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2064,
+        -32
+      ],
+      "id": "1bf66d60-ba46-4dff-a2d5-ffd51edb3828",
+      "name": "Restore Supplier Movements"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Create Supplier Sync Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Supplier Sync Run": {
+      "main": [
+        [
+          {
+            "node": "Login SIGProv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login SIGProv": {
+      "main": [
+        [
+          {
+            "node": "Get Suppliers Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Suppliers Accounts": {
+      "main": [
+        [
+          {
+            "node": "Split Suppliers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Suppliers": {
+      "main": [
+        [
+          {
+            "node": "Normalize Supplier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Supplier": {
+      "main": [
+        [
+          {
+            "node": "Loop Suppliers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Supplier": {
+      "main": [
+        [
+          {
+            "node": "Supplier Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supplier Exists?": {
+      "main": [
+        [
+          {
+            "node": "Update Supplier",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Supplier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Supplier": {
+      "main": [
+        [
+          {
+            "node": "Prepare Supplier Movements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Supplier": {
+      "main": [
+        [
+          {
+            "node": "Prepare Supplier Movements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Supplier Movements": {
+      "main": [
+        [
+          {
+            "node": "Delete Existing Movements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Movements": {
+      "main": [
+        [
+          {
+            "node": "Normalize Movement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Movement": {
+      "main": [
+        [
+          {
+            "node": "Create Movement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Movement": {
+      "main": [
+        [
+          {
+            "node": "Return to Supplier Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Suppliers": {
+      "main": [
+        [
+          {
+            "node": "Complete Supplier Sync",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Supplier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return to Supplier Loop": {
+      "main": [
+        [
+          {
+            "node": "Loop Suppliers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Existing Movements": {
+      "main": [
+        [
+          {
+            "node": "Restore Supplier Movements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Supplier Movements": {
+      "main": [
+        [
+          {
+            "node": "Split Movements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "52952905-4478-44bd-9980-b913aeea78fb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4604d5ca29a4e31ca62c5f558e3ad82c2e07e3f2b78a3393cb25f6d00b36689e"
+  },
+  "nodeGroups": [],
+  "id": "qkTyt6a9riAHFEQ0",
+  "tags": []
+}
