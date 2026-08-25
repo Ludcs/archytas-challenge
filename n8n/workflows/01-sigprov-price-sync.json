@@ -10,7 +10,8 @@
         96
       ],
       "id": "a57e5bc1-e91f-43cd-a1db-c91103996dcc",
-      "name": "When clicking ‘Execute workflow’"
+      "name": "When clicking ‘Execute workflow’",
+      "disabled": true
     },
     {
       "parameters": {
@@ -593,6 +594,26 @@
           "name": "Supabase account"
         }
       }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "price-sync",
+        "options": {
+          "responseCode": {
+            "values": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -288,
+        -64
+      ],
+      "id": "673cbd55-a0a5-4029-aa93-a7392f9f5986",
+      "name": "Webhook",
+      "webhookId": "d97e4ddd-d4fd-457d-8940-f1bc67fa8a90"
     }
   ],
   "pinData": {},
@@ -793,6 +814,17 @@
           }
         ]
       ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create Sync Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -801,7 +833,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "79c129d9-b6d1-4f3b-af03-9f75992c7d95",
+  "versionId": "e27b3402-9e56-4c07-9237-b8855f1fbf60",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4604d5ca29a4e31ca62c5f558e3ad82c2e07e3f2b78a3393cb25f6d00b36689e"
