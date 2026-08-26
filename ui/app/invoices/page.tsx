@@ -8,7 +8,7 @@ import { InvoicesTable } from "@/components/invoices/invoices-table";
 import { getInvoices } from "@/lib/invoices/queries";
 import { filterAndSortInvoices, getInvoiceAttentionMetrics, getInvoiceListFilter } from "@/lib/invoices/utils";
 
-export const metadata: Metadata = { title: "Facturas | SIGProv" };
+export const metadata: Metadata = { title: "Facturas" };
 
 type InvoicesPageProps = {
   searchParams: Promise<{ status?: string | string[]; filter?: string | string[]; q?: string | string[] }>;

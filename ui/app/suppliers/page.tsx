@@ -6,7 +6,7 @@ import { SupplierKpis } from "@/components/suppliers/supplier-kpis";
 import { SuppliersTable } from "@/components/suppliers/suppliers-table";
 import { getSuppliers } from "@/lib/suppliers/queries";
 
-export const metadata: Metadata = { title: "Proveedores | SIGProv" };
+export const metadata: Metadata = { title: "Proveedores" };
 
 export default async function SuppliersPage() {
   const suppliers = await getSuppliers();

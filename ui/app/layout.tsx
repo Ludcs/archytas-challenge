@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Precios | SIGProv",
+  title: "Ferreteria Cordillera",
   description: "Precios sincronizados automáticamente desde SIGProv.",
 };
 
