@@ -13,7 +13,7 @@ import {
 import { formatDate, formatDateTime } from "@/lib/prices/utils";
 
 export const metadata: Metadata = {
-  title: "Precios | SIGProv",
+  title: "Precios",
 };
 
 export default async function PricesPage() {
